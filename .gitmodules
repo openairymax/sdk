@@ -10,3 +10,9 @@
 [submodule "sdk-typescript"]
 	path = sdk-typescript
 	url = git@atomgit.com:openairymax/sdk-typescript.git
+[submodule "cli"]
+	path = cli
+	url = git@atomgit.com:openairymax/cli.git
+[submodule "tui"]
+	path = tui
+	url = git@atomgit.com:openairymax/tui.git
