@@ -1,59 +1,122 @@
-# Airymax SDK
+# Airymax SDK — Multi-Language Development Kits
 
-> Airymax 多语言 SDK 管理仓库
+> Unified SDK layer for the Airymax AI Agent Runtime Platform.
+> One of four management repositories under the [airymaxhub](https://atomgit.com/openairymax/airymaxhub) umbrella.
 
-## 概述
+**Language:** English | [简体中文](README_zh.md)
 
-SDK 管理仓聚合 Airymax 的 4 语言 SDK（Python/Go/Rust/TypeScript）和 2 命令行工具（CLI/TUI），为开发者提供跨语言的统一 Agent 运行时接口。
+[![Version](https://img.shields.io/badge/version-0.1.1-5a6b7e)](https://atomgit.com/openairymax/sdk)
+[![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Rust](https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-## 子模块
+---
 
-| 模块 | 仓库 | 语言 | 说明 |
-|------|------|------|------|
-| sdk-python | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK（含官方 Hooks 包） |
-| sdk-go | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK |
-| sdk-rust | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK |
-| sdk-typescript | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK |
-| cli | `git@atomgit.com:openairymax/cli.git` | Rust | 命令行工具（裸名） |
-| tui | `git@atomgit.com:openairymax/tui.git` | Rust | 终端 UI 工具（裸名） |
+## Overview
 
-## SDK 双层 API 架构
+The **SDK management repo** aggregates Airymax's 4 language SDKs and 2 CLI tools, providing developers with a unified, cross-language Agent runtime interface. Each SDK implements the same double-layer API architecture with 4 nested resource clients (16 clients total across all languages).
 
-每个 SDK 提供 4 个嵌套资源客户端（共 16 个嵌套客户端）：
+Agent applications developed using these SDKs are **runtime tenants** — they invoke system capabilities through the SDK rather than directly accessing kernel internals.
+
+## Leaf Repositories
+
+| Module | Repository | Language | Description |
+|--------|-----------|----------|-------------|
+| **sdk-python** | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK (includes official Hooks package: `agentrt.hooks`) |
+| **sdk-go** | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK |
+| **sdk-rust** | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK |
+| **sdk-typescript** | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK (npm package) |
+| **cli** | `git@atomgit.com:openairymax/cli.git` | Rust | Command-line interface tool |
+| **tui** | `git@atomgit.com:openairymax/tui.git` | Rust | Terminal UI tool |
+
+## Double-Layer API Architecture
+
+Each SDK provides 4 nested resource clients (16 nested clients total):
 
 ```
 AgentRTClient
-├── CognitionClient   # 认知层：任务/循环/推理
-├── SafetyClient      # 安全层：审计/沙箱/策略
-├── ToolClient        # 工具层：注册/调用/编排
-└── ChatClient        # 对话层：LLM 路由/会话/流式
+├── CognitionClient   # Cognition layer: tasks / loops / inference
+├── SafetyClient      # Safety layer: audit / sandbox / policy
+├── ToolClient        # Tool layer: register / invoke / orchestrate
+└── ChatClient        # Chat layer: LLM routing / sessions / streaming
 ```
 
-## 快速入门
+### Upstream Dependencies
+
+- **Runtime**: Connects to a running AgentRT instance (gateway_d) via HTTP/JSON-RPC 2.0
+- **Protocol**: Uses the AgentsIPC protocol defined in `protocols/`
+- **Configuration**: Managed by `ecosystem/manager/`
+
+### Downstream Consumers
+
+- **Agent applications**: User-written agents that import the SDK
+- **CLI/TUI tools**: Interactive tools that use the SDK internally
+- **Examples**: Reference agents in `ecosystem/examples/`
+
+## Quick Start
+
+### Python
 
 ```python
-# Python SDK 示例
 from agentrt import AgentRT
 from agentrt.hooks import SecurityReminderHook
 
 client = AgentRT(endpoint="http://localhost:18789")
-task = client.submit_task('{"input": "analyze data"}')
+client.register_hook(SecurityReminderHook())
+task = client.cognition.submit_task('{"input": "analyze data"}')
+print(task.result)
 ```
+
+### Go
 
 ```go
-// Go SDK 示例
 import "agentrt/client"
 
-client := client.NewAPIClient("http://localhost:18789")
-task, _ := client.SubmitTask(ctx, taskInput)
+client := client.NewAgentRTClient("http://localhost:18789")
+task, err := client.Cognition.SubmitTask(ctx, taskInput)
 ```
 
-## 仓库信息
+### Rust
 
-- **仓库 URL**: `git@atomgit.com:openairymax/sdk.git`
-- **归属组织**: openairymax
-- **分支策略**: 仅 `main` 分支
-- **许可证**: AGPL v3 + Apache 2.0 双许可证
+```rust
+use agentrt_sdk::prelude::*;
 
-Copyright (c) 2025-2026 SPHARX Ltd. All Rights Reserved.
-SPDX-License-Identifier: AGPL-3.0-or-later OR Apache-2.0
+let client = AgentRTClient::new("http://localhost:18789");
+let task = client.cognition().submit_task(r#"{"input": "analyze data"}"#).await?;
+```
+
+### TypeScript
+
+```typescript
+import { AgentRTClient } from "@spharx/agentrt-sdk";
+
+const client = new AgentRTClient({ endpoint: "http://localhost:18789" });
+const task = await client.cognition.submitTask({ input: "analyze data" });
+```
+
+## Repository Structure
+
+```
+sdk/
+├── sdk-python/       ← Python SDK + official Hooks package
+├── sdk-go/           ← Go SDK
+├── sdk-rust/         ← Rust SDK
+├── sdk-typescript/   ← TypeScript SDK (npm)
+├── cli/              ← CLI tool (Rust)
+├── tui/              ← Terminal UI (Rust)
+├── .gitmodules       ← Submodule definitions
+└── README.md         ← This file
+```
+
+## Branch Strategy
+
+- This management repo: **`main`** only
+- Leaf repos: **`feature/official-hubs-01`** (active development)
+
+## License
+
+Dual-licensed under **AGPL v3 + Apache 2.0** (SPDX: `AGPL-3.0-or-later OR Apache-2.0`). See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025-2026 **SPHARX Ltd.** All Rights Reserved.
