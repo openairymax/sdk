@@ -1,7 +1,7 @@
-# Airymax SDK — 多语言开发工具包
+# Airymax SDK — 多语言开发者工具包
 
-> Airymax AI 智能体运行时平台的统一 SDK 层。
-> [airymaxhub](https://atomgit.com/openairymax/airymaxhub) 伞仓下四个管理仓之一。
+> Airymax AI 智能体运行时平台的开发者工具包管理仓。
+> [airymaxhub](https://atomgit.com/openairymax/airymaxhub) 伞仓下五个管理仓之一。
 
 **语言:** [English](README.md) | 简体中文
 
@@ -16,66 +16,181 @@
 
 ## 概述
 
-**SDK 管理仓**聚合 Airymax 的 4 语言 SDK 和 2 个命令行工具，为开发者提供跨语言的统一 Agent 运行时接口。每个 SDK 实现相同的双层 API 架构，包含 4 个嵌套资源客户端（4 语言共 16 个嵌套客户端）。
+**`sdk` 管理仓**是 Airymax 平台面向开发者的打包层。它以 git submodule 形式聚合 **6 个叶子仓**，为 Airymax AI 智能体运行时提供统一一致的开发者接口：
 
-使用这些 SDK 开发的 Agent 应用是**运行时租户** — 通过 SDK 调用系统能力，而非直接访问内核内部。
+- **4 语言 SDK** — Python、Go、Rust、TypeScript
+- **2 个交互式工具** — `sdk-cli`（命令行工具）和 `sdk-tui`（终端 UI 工具）
+
+四个 SDK 实现同一套**双层 API 架构**：每个语言 SDK 暴露 **4 个嵌套资源客户端**（`CognitionClient` / `SafetyClient` / `ToolClient` / `ChatClient`），即 **4 语言 × 4 嵌套客户端 = 16 个嵌套客户端**。基于这些 SDK 构建的智能体应用是**运行时租户** — 通过 SDK 调用平台能力，而非直接接触内核内部。
+
+本管理仓只承载文档、submodule 接线与许可证，所有实现均位于叶子仓中。
+
+## 仓库结构
+
+```
+sdk/                       # 管理仓（本仓）
+├── sdk-python/            # Python SDK 叶子仓（submodule）
+├── sdk-go/                # Go SDK 叶子仓（submodule）
+├── sdk-rust/              # Rust SDK 叶子仓（submodule）
+├── sdk-typescript/        # TypeScript SDK 叶子仓（submodule）
+├── cli/                   # sdk-cli 叶子仓（submodule，目录名：cli/）
+├── tui/                   # sdk-tui 叶子仓（submodule，目录名：tui/）
+├── .gitmodules            # submodule 定义
+├── LICENSE                # AGPL-3.0 + Apache-2.0 双许可证全文
+├── NOTICE                 # 版权、商标与第三方声明
+├── README.md              # 英文版
+└── README_zh.md           # 本文件（中文版）
+```
 
 ## 叶子仓
 
-| 模块 | 仓库 | 语言 | 说明 |
-|------|------|------|------|
-| **sdk-python** | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK（含官方 Hooks 包：`agentrt.hooks`） |
-| **sdk-go** | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK |
-| **sdk-rust** | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK |
-| **sdk-typescript** | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK（npm 包） |
-| **cli** | `git@atomgit.com:openairymax/cli.git` | Rust | 命令行工具 |
-| **tui** | `git@atomgit.com:openairymax/tui.git` | Rust | 终端 UI 工具 |
+| 模块 | 目录 | 仓库 URL | 语言 | 说明 |
+|------|------|----------|------|------|
+| **sdk-python** | `sdk-python/` | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK（`agentrt` 包，3.10+） |
+| **sdk-go** | `sdk-go/` | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK（模块 `agentrt-sdk-go`，Go 1.22+） |
+| **sdk-rust** | `sdk-rust/` | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK（crate `agentrt-sdk`，edition 2021） |
+| **sdk-typescript** | `sdk-typescript/` | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK（npm 包 `@spharx/agentrt-sdk`，TS 5.0+） |
+| **sdk-cli** | `cli/` | `git@atomgit.com:openairymax/sdk-cli.git` | Rust | 命令行工具，用于运行时运维 |
+| **sdk-tui** | `tui/` | `git@atomgit.com:openairymax/sdk-tui.git` | Rust | 终端 UI 工具，用于交互式智能体会话 |
 
-## 双层 API 架构
+> 注意：`sdk-cli` 与 `sdk-tui` 模块分别检出到 `cli/` 与 `tui/` 目录，但其规范仓库名保留 `sdk-` 前缀。
 
-每个 SDK 提供 4 个嵌套资源客户端（4 语言共 16 个嵌套客户端）：
+## SDK 架构
+
+Airymax SDK 基于**双层 API** 构建。一份稳定的二进制契约（Core C ABI）通过各语言的 FFI 绑定暴露，再封装为符合语言习惯的 SDK，最后划分为四个嵌套资源客户端。这样既保证跨语言行为一致，又让每个 SDK 在各自生态中显得原生自然。
 
 ```
-AgentRTClient
-├── CognitionClient   # 认知层：任务 / 循环 / 推理
-├── SafetyClient      # 安全层：审计 / 沙箱 / 策略
-├── ToolClient        # 工具层：注册 / 调用 / 编排
-└── ChatClient        # 对话层：LLM 路由 / 会话 / 流式
+┌──────────────────────────────────────────────────────────────────┐
+│  第 2 层 — 嵌套资源客户端（每语言 4 个 × 4 语言 = 16 个）          │
+│  CognitionClient · SafetyClient · ToolClient · ChatClient         │
+├──────────────────────────────────────────────────────────────────┤
+│  第 1 层 — 语言 SDK（4 种语言）                                    │
+│  agentrt (Python) · agentrt-sdk-go · agentrt-sdk (Rust) ·         │
+│  @spharx/agentrt-sdk (TypeScript)                                 │
+├──────────────────────────────────────────────────────────────────┤
+│  FFI 绑定（各语言：PyO3 / cgo / bindgen / napi-rs）                │
+├──────────────────────────────────────────────────────────────────┤
+│  Core C ABI — 稳定的二进制契约（AgentsIPC 协议接口）               │
+└──────────────────────────────────────────────────────────────────┘
+        │
+        ▼   HTTP / JSON-RPC 2.0
+┌──────────────────────────────────────────────────────────────────┐
+│  AgentRT 运行时（gateway_d）— 内核服务与资源总线                    │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### 上游依赖
 
-- **运行时**：通过 HTTP/JSON-RPC 2.0 连接到运行中的 AgentRT 实例（gateway_d）
-- **协议**：使用 `protocols/` 中定义的 AgentsIPC 协议
-- **配置**：由 `ecosystem/manager/` 管理
+- **运行时** — 通过 HTTP / JSON-RPC 2.0 连接到运行中的 AgentRT 实例（`gateway_d`）。
+- **协议** — 使用 `protocols/` 管理仓中定义的 AgentsIPC 协议。
+- **配置** — 运行时端点与凭据由 `ecosystem/manager/` 管理。
 
 ### 下游消费者
 
-- **Agent 应用**：用户编写的 Agent 导入 SDK
-- **CLI/TUI 工具**：交互式工具内部使用 SDK
-- **示例**：`ecosystem/examples/` 中的参考 Agent
+- **智能体应用** — 用户编写的智能体导入语言 SDK。
+- **`sdk-cli` / `sdk-tui`** — 交互式工具在内部链接 SDK。
+- **参考示例** — `ecosystem/examples/` 下的智能体示例。
+
+## 嵌套客户端 API
+
+每个语言 SDK 暴露一个根客户端（`AgentRTClient`），其下挂四个嵌套资源客户端。这一嵌套结构是双层 API 的第二层，在四种语言中完全一致。
+
+| 嵌套客户端 | 资源层 | 职责 |
+|-----------|--------|------|
+| `CognitionClient` | 认知 | 任务提交、推理循环、时间切片推理（`CoreLoopThree` / `TimeSliceInfer`） |
+| `SafetyClient` | 安全 | 策略审计、沙箱、内生安全（`Cupolas`） |
+| `ToolClient` | 工具 | 工具注册、调用、多工具编排 |
+| `ChatClient` | 对话 | LLM 供应商路由（`SystemicLLM`）、会话管理、流式响应 |
+
+```
+AgentRTClient
+├── cognition   →  CognitionClient
+├── safety      →  SafetyClient
+├── tool        →  ToolClient
+└── chat        →  ChatClient
+```
+
+## 构建与安装
+
+### Python（sdk-python）
+
+```bash
+pip install agentrt
+```
+
+### Go（sdk-go）
+
+```bash
+go get github.com/spharx/agentrt-sdk-go
+```
+
+### Rust（sdk-rust）
+
+```bash
+cargo add agentrt-sdk
+```
+
+### TypeScript（sdk-typescript）
+
+```bash
+npm install @spharx/agentrt-sdk
+# 或: pnpm add @spharx/agentrt-sdk / yarn add @spharx/agentrt-sdk
+```
+
+### CLI 与 TUI（sdk-cli / sdk-tui）
+
+两个工具都是 Rust 二进制，随 `sdk-cli` 与 `sdk-tui` 叶子仓分发。从源码构建：
+
+```bash
+# 在 cli/ submodule 目录内
+cargo install --path .
+
+# 在 tui/ submodule 目录内
+cargo install --path .
+```
 
 ## 快速入门
+
+所有示例假定本地已运行 AgentRT 实例，地址为 `http://localhost:18789`。
 
 ### Python
 
 ```python
 from agentrt import AgentRT
-from agentrt.hooks import SecurityReminderHook
 
 client = AgentRT(endpoint="http://localhost:18789")
-client.register_hook(SecurityReminderHook())
-task = client.cognition.submit_task('{"input": "analyze data"}')
+
+# 认知层：提交任务
+task = client.cognition.submit_task({"input": "analyze quarterly metrics"})
 print(task.result)
+
+# 安全层：在执行工具调用前进行审计
+audit = client.safety.audit(tool="web_search", args={"q": "airymax"})
+if audit.allowed:
+    client.tool.invoke("web_search", {"q": "airymax"})
 ```
 
 ### Go
 
 ```go
-import "agentrt/client"
+package main
 
-client := client.NewAgentRTClient("http://localhost:18789")
-task, err := client.Cognition.SubmitTask(ctx, taskInput)
+import (
+    "context"
+    "fmt"
+
+    "github.com/spharx/agentrt-sdk-go/client"
+)
+
+func main() {
+    c := client.NewAgentRTClient("http://localhost:18789")
+
+    task, err := c.Cognition.SubmitTask(ctx, map[string]any{"input": "analyze quarterly metrics"})
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(task.Result)
+}
 ```
 
 ### Rust
@@ -83,8 +198,18 @@ task, err := client.Cognition.SubmitTask(ctx, taskInput)
 ```rust
 use agentrt_sdk::prelude::*;
 
-let client = AgentRTClient::new("http://localhost:18789");
-let task = client.cognition().submit_task(r#"{"input": "analyze data"}"#).await?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = AgentRTClient::new("http://localhost:18789");
+
+    let task = client
+        .cognition()
+        .submit_task(r#"{"input":"analyze quarterly metrics"}"#)
+        .await?;
+
+    println!("{}", task.result);
+    Ok(())
+}
 ```
 
 ### TypeScript
@@ -93,30 +218,29 @@ let task = client.cognition().submit_task(r#"{"input": "analyze data"}"#).await?
 import { AgentRTClient } from "@spharx/agentrt-sdk";
 
 const client = new AgentRTClient({ endpoint: "http://localhost:18789" });
-const task = await client.cognition.submitTask({ input: "analyze data" });
-```
 
-## 仓库结构
-
-```
-sdk/
-├── sdk-python/       ← Python SDK + 官方 Hooks 包
-├── sdk-go/           ← Go SDK
-├── sdk-rust/         ← Rust SDK
-├── sdk-typescript/   ← TypeScript SDK（npm）
-├── cli/              ← CLI 工具（Rust）
-├── tui/              ← 终端 UI（Rust）
-├── .gitmodules       ← Submodule 定义
-└── README.md         ← 本文件
+// 对话层：流式 LLM 响应
+const stream = await client.chat.stream({ prompt: "Summarize the latest agent run" });
+for await (const chunk of stream) {
+    process.stdout.write(chunk.delta);
+}
 ```
 
 ## 分支策略
 
-- 本管理仓：仅 **`main`** 分支
-- 叶子仓：**`feature/official-hubs-01`**（活跃开发）
+- **本管理仓** — 仅 `main` 分支，不在此创建功能分支。
+- **叶子仓** — 活跃开发在 `feature/official-hubs-01` 分支进行；各叶子仓的 `main` 分支跟踪上一个稳定版本。
+
+带 submodule 克隆本仓库：
+
+```bash
+git clone --recurse-submodules git@atomgit.com:openairymax/sdk.git
+cd sdk
+git submodule update --remote --checkout
+```
 
 ## 许可证
 
-采用 **AGPL v3 + Apache 2.0** 双许可证（SPDX: `AGPL-3.0-or-later OR Apache-2.0`）。详见 [LICENSE](LICENSE)。
+采用 **AGPL v3 + Apache 2.0** 双许可证（SPDX: `AGPL-3.0-or-later OR Apache-2.0`），可任选其一。两份许可证全文详见 [LICENSE](LICENSE)，版权、商标与第三方声明详见 [NOTICE](NOTICE)。
 
-Copyright (c) 2025-2026 **SPHARX Ltd.** All Rights Reserved.
+Copyright (c) 2025-2026 SPHARX Ltd. All Rights Reserved.
