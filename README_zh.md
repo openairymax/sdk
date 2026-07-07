@@ -19,7 +19,7 @@
 **`sdk` 管理仓**是 Airymax 平台面向开发者的打包层。它以 git submodule 形式聚合 **6 个叶子仓**，为 Airymax AI 智能体运行时提供统一一致的开发者接口：
 
 - **4 语言 SDK** — Python、Go、Rust、TypeScript
-- **2 个交互式工具** — `sdk-cli`（命令行工具）和 `sdk-tui`（终端 UI 工具）
+- **2 个交互式工具** — `cli`（命令行工具）和 `tui`（终端 UI 工具）
 
 四个 SDK 实现同一套**双层 API 架构**：每个语言 SDK 暴露 **4 个嵌套资源客户端**（`CognitionClient` / `SafetyClient` / `ToolClient` / `ChatClient`），即 **4 语言 × 4 嵌套客户端 = 16 个嵌套客户端**。基于这些 SDK 构建的智能体应用是**运行时租户** — 通过 SDK 调用平台能力，而非直接接触内核内部。
 
@@ -33,8 +33,8 @@ sdk/                       # 管理仓（本仓）
 ├── sdk-go/                # Go SDK 叶子仓（submodule）
 ├── sdk-rust/              # Rust SDK 叶子仓（submodule）
 ├── sdk-typescript/        # TypeScript SDK 叶子仓（submodule）
-├── cli/                   # sdk-cli 叶子仓（submodule，目录名：cli/）
-├── tui/                   # sdk-tui 叶子仓（submodule，目录名：tui/）
+├── cli/                   # cli 叶子仓（submodule，目录名：cli/）
+├── tui/                   # tui 叶子仓（submodule，目录名：tui/）
 ├── .gitmodules            # submodule 定义
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 双许可证全文
 ├── NOTICE                 # 版权、商标与第三方声明
@@ -50,10 +50,10 @@ sdk/                       # 管理仓（本仓）
 | **sdk-go** | `sdk-go/` | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK（模块 `agentrt-sdk-go`，Go 1.22+） |
 | **sdk-rust** | `sdk-rust/` | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK（crate `agentrt-sdk`，edition 2021） |
 | **sdk-typescript** | `sdk-typescript/` | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK（npm 包 `@spharx/agentrt-sdk`，TS 5.0+） |
-| **sdk-cli** | `cli/` | `git@atomgit.com:openairymax/sdk-cli.git` | Rust | 命令行工具，用于运行时运维 |
-| **sdk-tui** | `tui/` | `git@atomgit.com:openairymax/sdk-tui.git` | Rust | 终端 UI 工具，用于交互式智能体会话 |
+| **cli** | `cli/` | `git@atomgit.com:openairymax/cli.git` | Rust | 命令行工具，用于运行时运维 |
+| **tui** | `tui/` | `git@atomgit.com:openairymax/tui.git` | Rust | 终端 UI 工具，用于交互式智能体会话 |
 
-> 注意：`sdk-cli` 与 `sdk-tui` 模块分别检出到 `cli/` 与 `tui/` 目录，但其规范仓库名保留 `sdk-` 前缀。
+> 注意：`cli` 与 `tui` 模块的目录名与仓库名一致 —— 这两个交互式工具不使用 `sdk-` 前缀。
 
 ## SDK 架构
 
@@ -88,7 +88,7 @@ Airymax SDK 基于**双层 API** 构建。一份稳定的二进制契约（Core 
 ### 下游消费者
 
 - **智能体应用** — 用户编写的智能体导入语言 SDK。
-- **`sdk-cli` / `sdk-tui`** — 交互式工具在内部链接 SDK。
+- **`cli` / `tui`** — 交互式工具在内部链接 SDK。
 - **参考示例** — `ecosystem/examples/` 下的智能体示例。
 
 ## 嵌套客户端 API
@@ -137,9 +137,9 @@ npm install @spharx/agentrt-sdk
 # 或: pnpm add @spharx/agentrt-sdk / yarn add @spharx/agentrt-sdk
 ```
 
-### CLI 与 TUI（sdk-cli / sdk-tui）
+### CLI 与 TUI（cli / tui）
 
-两个工具都是 Rust 二进制，随 `sdk-cli` 与 `sdk-tui` 叶子仓分发。从源码构建：
+两个工具都是 Rust 二进制，随 `cli` 与 `tui` 叶子仓分发。从源码构建：
 
 ```bash
 # 在 cli/ submodule 目录内

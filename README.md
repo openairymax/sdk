@@ -19,7 +19,7 @@
 The **`sdk` management repository** is the developer-facing packaging layer of the Airymax platform. It aggregates **6 leaf repositories** as git submodules and exposes a single, coherent developer surface for the Airymax AI Agent Runtime:
 
 - **4 language SDKs** — Python, Go, Rust, TypeScript
-- **2 interactive tools** — `sdk-cli` (command-line interface) and `sdk-tui` (terminal UI)
+- **2 interactive tools** — `cli` (command-line interface) and `tui` (terminal UI)
 
 All four SDKs implement the same **double-layer API architecture**: each language SDK exposes **4 nested resource clients** (`CognitionClient` / `SafetyClient` / `ToolClient` / `ChatClient`), yielding **4 languages × 4 nested clients = 16 nested clients** in total. Agent applications built on these SDKs are **runtime tenants** — they invoke platform capabilities through the SDK rather than touching kernel internals directly.
 
@@ -33,8 +33,8 @@ sdk/                       # Management repository (this repo)
 ├── sdk-go/                # Go SDK leaf repo (submodule)
 ├── sdk-rust/              # Rust SDK leaf repo (submodule)
 ├── sdk-typescript/        # TypeScript SDK leaf repo (submodule)
-├── cli/                   # sdk-cli leaf repo (submodule, directory name: cli/)
-├── tui/                   # sdk-tui leaf repo (submodule, directory name: tui/)
+├── cli/                   # cli leaf repo (submodule, directory name: cli/)
+├── tui/                   # tui leaf repo (submodule, directory name: tui/)
 ├── .gitmodules            # Submodule definitions
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 dual license full text
 ├── NOTICE                 # Copyright, trademark and third-party notices
@@ -50,10 +50,10 @@ sdk/                       # Management repository (this repo)
 | **sdk-go** | `sdk-go/` | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK (module `agentrt-sdk-go`, Go 1.22+) |
 | **sdk-rust** | `sdk-rust/` | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK (crate `agentrt-sdk`, edition 2021) |
 | **sdk-typescript** | `sdk-typescript/` | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK (npm package `@spharx/agentrt-sdk`, TS 5.0+) |
-| **sdk-cli** | `cli/` | `git@atomgit.com:openairymax/sdk-cli.git` | Rust | Command-line interface tool for runtime ops |
-| **sdk-tui** | `tui/` | `git@atomgit.com:openairymax/sdk-tui.git` | Rust | Terminal UI tool for interactive agent sessions |
+| **cli** | `cli/` | `git@atomgit.com:openairymax/cli.git` | Rust | Command-line interface tool for runtime ops |
+| **tui** | `tui/` | `git@atomgit.com:openairymax/tui.git` | Rust | Terminal UI tool for interactive agent sessions |
 
-> Note: the `sdk-cli` and `sdk-tui` modules are checked out into the `cli/` and `tui/` directories respectively, but their canonical repository names carry the `sdk-` prefix.
+> Note: the `cli` and `tui` modules use the same name for both the directory and the repository — no `sdk-` prefix is applied to these two interactive tools.
 
 ## SDK Architecture
 
@@ -88,7 +88,7 @@ Airymax SDKs are built on a **double-layer API**. A single stable binary contrac
 ### Downstream Consumers
 
 - **Agent applications** — user-written agents that import a language SDK.
-- **`sdk-cli` / `sdk-tui`** — interactive tools that link the SDKs internally.
+- **`cli` / `tui`** — interactive tools that link the SDKs internally.
 - **Reference examples** — agents under `ecosystem/examples/`.
 
 ## Nested Client API
@@ -137,9 +137,9 @@ npm install @spharx/agentrt-sdk
 # or: pnpm add @spharx/agentrt-sdk / yarn add @spharx/agentrt-sdk
 ```
 
-### CLI & TUI (sdk-cli / sdk-tui)
+### CLI & TUI (cli / tui)
 
-Both tools are Rust binaries distributed as part of the `sdk-cli` and `sdk-tui` leaf repos. Build them from source:
+Both tools are Rust binaries distributed as part of the `cli` and `tui` leaf repos. Build them from source:
 
 ```bash
 # Inside the cli/ submodule directory
