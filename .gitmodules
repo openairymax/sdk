@@ -1,24 +1,24 @@
 [submodule "sdk-python"]
 	path = sdk-python
-	url = git@atomgit.com:openairymax/sdk-python.git
+	url = ../sdk-python.git
 	branch = feature/official-hubs-01
 [submodule "sdk-go"]
 	path = sdk-go
-	url = git@atomgit.com:openairymax/sdk-go.git
+	url = ../sdk-go.git
 	branch = feature/official-hubs-01
 [submodule "sdk-rust"]
 	path = sdk-rust
-	url = git@atomgit.com:openairymax/sdk-rust.git
+	url = ../sdk-rust.git
 	branch = feature/official-hubs-01
 [submodule "sdk-typescript"]
 	path = sdk-typescript
-	url = git@atomgit.com:openairymax/sdk-typescript.git
+	url = ../sdk-typescript.git
 	branch = feature/official-hubs-01
 [submodule "cli"]
 	path = cli
-	url = git@atomgit.com:openairymax/cli.git
+	url = ../cli.git
 	branch = feature/official-hubs-01
 [submodule "tui"]
 	path = tui
-	url = git@atomgit.com:openairymax/tui.git
+	url = ../tui.git
 	branch = feature/official-hubs-01
