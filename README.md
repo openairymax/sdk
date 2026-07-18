@@ -243,4 +243,21 @@ git submodule update --remote --checkout
 
 Dual-licensed under **AGPL v3 + Apache 2.0** (SPDX: `AGPL-3.0-or-later OR Apache-2.0`). You may choose either license at your option. See [LICENSE](LICENSE) for the full text of both licenses and [NOTICE](NOTICE) for copyright, trademark and third-party notices.
 
+### Dual License Guide
+
+You may choose **either** license at your option — not both, not neither.
+
+**SPDX Expression**: `AGPL-3.0-or-later OR Apache-2.0`
+
+| If you are... | Choose | Why |
+|---------------|--------|-----|
+| Building a **SaaS** or network service that modifies the SDK | **AGPL v3** | Network service clause requires source disclosure |
+| Developing **open-source** SDK derivatives (copyleft) | **AGPL v3** | Derivatives must remain open-source under AGPL |
+| Using the SDK in **commercial closed-source** products | **Apache 2.0** | Permissive, allows proprietary derivatives |
+| Building **enterprise internal tools** | **Apache 2.0** | No source disclosure required |
+| Needing **patent protection** | **Apache 2.0** | Explicit patent grant from contributors |
+| Just learning or researching | **Either** | Both permit personal use |
+
+For the authoritative license policy, see [12-license-policy.md](../docs/AirymaxOS/50-engineering-standards/12-license-policy.md).
+
 Copyright (c) 2025-2026 SPHARX Ltd. All Rights Reserved.
