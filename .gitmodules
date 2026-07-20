@@ -1,24 +1,24 @@
 [submodule "sdk-python"]
 	path = sdk-python
 	url = ../sdk-python.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
 [submodule "sdk-go"]
 	path = sdk-go
 	url = ../sdk-go.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
 [submodule "sdk-rust"]
 	path = sdk-rust
 	url = ../sdk-rust.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
 [submodule "sdk-typescript"]
 	path = sdk-typescript
 	url = ../sdk-typescript.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
 [submodule "cli"]
 	path = cli
 	url = ../cli.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
 [submodule "tui"]
 	path = tui
 	url = ../tui.git
-	branch = feature/official-hubs-01
+	branch = develop/hubs-01
