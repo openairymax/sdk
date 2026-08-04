@@ -21,7 +21,7 @@ The **`sdk` management repository** is the developer-facing packaging layer of t
 - **4 language SDKs** — Python, Go, Rust, TypeScript
 - **2 interactive tools** — `cli` (command-line interface) and `tui` (terminal UI)
 
-All four SDKs implement the same **double-layer API architecture**: each language SDK exposes **4 nested resource clients** (`CognitionClient` / `SafetyClient` / `ToolClient` / `ChatClient`), yielding **4 languages × 4 nested clients = 16 nested clients** in total. Agent applications built on these SDKs are **runtime tenants** — they invoke platform capabilities through the SDK rather than touching kernel internals directly.
+All four SDKs share the same architecture: each language SDK exposes an HTTP client layer (`Client` / `APIClient`) plus four business module managers — `TaskManager` (tasks), `MemoryManager` (memory), `SessionManager` (sessions) and `SkillManager` (skills). Agent applications built on these SDKs are **runtime tenants** — they invoke platform capabilities through the SDK over HTTP / JSON-RPC 2.0 rather than touching kernel internals directly.
 
 This management repo only carries documentation, submodule wiring, and licensing. All implementation lives in the leaf repositories.
 
@@ -46,10 +46,10 @@ sdk/                       # Management repository (this repo)
 
 | Module | Directory | Repository URL | Language | Description |
 |--------|-----------|----------------|----------|-------------|
-| **sdk-python** | `sdk-python/` | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK (`agentrt` package, 3.10+) |
-| **sdk-go** | `sdk-go/` | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK (module `agentrt-sdk-go`, Go 1.22+) |
-| **sdk-rust** | `sdk-rust/` | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK (crate `agentrt-sdk`, edition 2021) |
-| **sdk-typescript** | `sdk-typescript/` | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK (npm package `@spharx/agentrt-sdk`, TS 5.0+) |
+| **sdk-python** | `sdk-python/` | `git@atomgit.com:openairymax/sdk-python.git` | Python | Python SDK (`agentrt` package, 3.8+) |
+| **sdk-go** | `sdk-go/` | `git@atomgit.com:openairymax/sdk-go.git` | Go | Go SDK (module `github.com/spharx/agentrt/sdk/go/agentrt`, Go 1.22+) |
+| **sdk-rust** | `sdk-rust/` | `git@atomgit.com:openairymax/sdk-rust.git` | Rust | Rust SDK (crate `agentrt-rs`, edition 2021) |
+| **sdk-typescript** | `sdk-typescript/` | `git@atomgit.com:openairymax/sdk-typescript.git` | TypeScript | TypeScript SDK (npm package `@agentrt/sdk`, TS 5.0+) |
 | **cli** | `cli/` | `git@atomgit.com:openairymax/cli.git` | Rust | Command-line interface tool for runtime ops |
 | **tui** | `tui/` | `git@atomgit.com:openairymax/tui.git` | Rust | Terminal UI tool for interactive agent sessions |
 
@@ -57,20 +57,18 @@ sdk/                       # Management repository (this repo)
 
 ## SDK Architecture
 
-Airymax SDKs are built on a **double-layer API**. A single stable binary contract (the Core C ABI) is exposed through per-language FFI bindings, wrapped in idiomatic language SDKs, and finally partitioned into four nested resource clients. This keeps behavior identical across languages while letting each SDK feel native to its ecosystem.
+Each SDK is a plain HTTP client for the AgentRT runtime. There is **no native FFI binding to a Core C ABI** — the SDKs talk to the Gateway directly over HTTP / JSON-RPC 2.0. Every language SDK exposes a low-level `APIClient` / `Client` for raw requests, with four idiomatic business module managers on top of it.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Layer 2 — Nested Resource Clients (4 per language × 4 = 16)      │
-│  CognitionClient · SafetyClient · ToolClient · ChatClient         │
+│  Business Module Managers (4 per language)                        │
+│  TaskManager · MemoryManager · SessionManager · SkillManager      │
 ├──────────────────────────────────────────────────────────────────┤
-│  Layer 1 — Language SDKs (4 languages)                            │
-│  agentrt (Python) · agentrt-sdk-go · agentrt-sdk (Rust) ·         │
-│  @spharx/agentrt-sdk (TypeScript)                                 │
+│  HTTP Client Layer (APIClient / Client)                           │
+│  agentrt (Python) · agentrt (Go) · agentrt-rs (Rust) ·            │
+│  @agentrt/sdk (TypeScript)                                        │
 ├──────────────────────────────────────────────────────────────────┤
-│  FFI Bindings (per-language: PyO3 / cgo / bindgen / napi-rs)      │
-├──────────────────────────────────────────────────────────────────┤
-│  Core C ABI — stable binary contract (AgentsIPC protocol surface) │
+│  Transport: HTTP / JSON-RPC 2.0 (no native FFI / Core C ABI)      │
 └──────────────────────────────────────────────────────────────────┘
         │
         ▼   HTTP / JSON-RPC 2.0
@@ -88,26 +86,26 @@ Airymax SDKs are built on a **double-layer API**. A single stable binary contrac
 ### Downstream Consumers
 
 - **Agent applications** — user-written agents that import a language SDK.
-- **`cli` / `tui`** — interactive tools that link the SDKs internally.
+- **`cli` / `tui`** — standalone Rust tools that talk to the Gateway over HTTP (they do not link the language SDKs).
 - **Reference examples** — agents under `ecosystem/examples/`.
 
-## Nested Client API
+## Module Manager API
 
-Each language SDK exposes a single root client (`AgentRTClient`) with four nested resource clients. The nesting is the second layer of the double-layer API and is identical across all four languages.
+Each language SDK exposes an HTTP client plus four business module managers. The manager APIs are aligned across all four languages.
 
-| Nested Client | Resource Layer | Responsibilities |
-|---------------|----------------|------------------|
-| `CognitionClient` | Cognition | Task submission, reasoning loops, time-sliced inference (`CoreLoopThree` / `TimeSliceInfer`) |
-| `SafetyClient` | Safety | Policy audit, sandboxing, endogenous security (`Cupolas`) |
-| `ToolClient` | Tool | Tool registration, invocation, multi-tool orchestration |
-| `ChatClient` | Chat | LLM provider routing (`SystemicLLM`), session management, streaming responses |
+| Manager | Resource Layer | Responsibilities |
+|---------|----------------|------------------|
+| `TaskManager` | Tasks | Task submission, query, wait, cancel, list, batch operations |
+| `MemoryManager` | Memory | Layered memory write / read / search |
+| `SessionManager` | Sessions | Session lifecycle management |
+| `SkillManager` | Skills | Skill registration, invocation, management |
 
 ```
-AgentRTClient
-├── cognition   →  CognitionClient
-├── safety      →  SafetyClient
-├── tool        →  ToolClient
-└── chat        →  ChatClient
+Client (HTTP layer)
+├── TaskManager    →  submit / get / wait / cancel / list
+├── MemoryManager  →  write / read / search
+├── SessionManager →  create / get / delete
+└── SkillManager   →  load / invoke / list
 ```
 
 ## Build & Install
@@ -121,20 +119,20 @@ pip install agentrt
 ### Go (sdk-go)
 
 ```bash
-go get github.com/spharx/agentrt-sdk-go
+go get github.com/spharx/agentrt/sdk/go/agentrt
 ```
 
 ### Rust (sdk-rust)
 
 ```bash
-cargo add agentrt-sdk
+cargo add agentrt-rs
 ```
 
 ### TypeScript (sdk-typescript)
 
 ```bash
-npm install @spharx/agentrt-sdk
-# or: pnpm add @spharx/agentrt-sdk / yarn add @spharx/agentrt-sdk
+npm install @agentrt/sdk
+# or: pnpm add @agentrt/sdk / yarn add @agentrt/sdk
 ```
 
 ### CLI & TUI (cli / tui)
@@ -160,15 +158,15 @@ from agentrt import AgentRT
 
 client = AgentRT(endpoint="http://localhost:18789")
 
-# Cognition layer: submit a task
-task = client.cognition.submit_task({"input": "analyze quarterly metrics"})
-print(task.result)
+# Task: submit a task
+task = client.submit_task("analyze quarterly metrics")
 
-# Safety layer: audit a tool call before execution
-audit = client.safety.audit(tool="web_search", args={"q": "airymax"})
-if audit.allowed:
-    client.tool.invoke("web_search", {"q": "airymax"})
+# Memory: write a memory record
+memory_id = client.write_memory("quarterly metrics", metadata={"tag": "report"})
 ```
+
+The `agentrt.modules` package additionally exposes the module managers
+(`TaskManager`, `MemoryManager`, `SessionManager`, `SkillManager`) for typed access.
 
 ### Go
 
@@ -179,35 +177,42 @@ import (
     "context"
     "fmt"
 
-    "github.com/spharx/agentrt-sdk-go/client"
+    "github.com/spharx/agentrt/sdk/go/agentrt"
+    "github.com/spharx/agentrt/sdk/go/agentrt/client"
+    "github.com/spharx/agentrt/sdk/go/agentrt/modules/task"
 )
 
 func main() {
-    c := client.NewAgentRTClient("http://localhost:18789")
-
-    task, err := c.Cognition.SubmitTask(ctx, map[string]any{"input": "analyze quarterly metrics"})
+    ctx := context.Background()
+    c, err := client.NewClient(agentrt.WithEndpoint("http://localhost:18789"))
     if err != nil {
         panic(err)
     }
-    fmt.Println(task.Result)
+
+    tasks := task.NewTaskManager(c)
+    t, err := tasks.Submit(ctx, "analyze quarterly metrics")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("%+v\n", t)
 }
 ```
 
 ### Rust
 
 ```rust
-use agentrt_sdk::prelude::*;
+use std::sync::Arc;
+
+use agentrt_rs::client::Client;
+use agentrt_rs::modules::task::TaskManager;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = AgentRTClient::new("http://localhost:18789");
+    let client = Client::new("http://localhost:18789")?;
+    let tasks = TaskManager::new(Arc::new(client));
 
-    let task = client
-        .cognition()
-        .submit_task(r#"{"input":"analyze quarterly metrics"}"#)
-        .await?;
-
-    println!("{}", task.result);
+    let task = tasks.submit("analyze quarterly metrics").await?;
+    println!("{:?}", task);
     Ok(())
 }
 ```
@@ -215,15 +220,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### TypeScript
 
 ```typescript
-import { AgentRTClient } from "@spharx/agentrt-sdk";
+import { AgentRTClient, withEndpoint } from "@agentrt/sdk";
 
-const client = new AgentRTClient({ endpoint: "http://localhost:18789" });
+const client = new AgentRTClient(withEndpoint("http://localhost:18789"));
 
-// Chat layer: streaming LLM response
-const stream = await client.chat.stream({ prompt: "Summarize the latest agent run" });
-for await (const chunk of stream) {
-    process.stdout.write(chunk.delta);
-}
+// Task manager: submit a task
+const task = await client.tasks.submit("analyze quarterly metrics");
+console.log(task);
 ```
 
 ## Branch Strategy
