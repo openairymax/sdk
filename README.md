@@ -7,7 +7,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.1-5a6b7e)](https://atomgit.com/openairymax/sdk)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![Python](https://img.shields.io/badge/Python->=3.8-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -147,16 +147,28 @@ cargo install --path .
 cargo install --path .
 ```
 
+> **边界约定（SSoT）**：`cli` / `tui` 是面向开发者的独立 Rust 交互工具，与
+> 核心仓内置的 C 工具 `agentrt/tools/airy_cli`（随运行时源码分发）定位互补：
+> - `agentrt/tools/airy_cli`（C）— 运行时自带交互入口，**进程内直接链接
+>   内核库**（GCCP / 认知管线），零外部依赖即用；内置交互 chat 与全屏 TUI
+> - `sdk/cli`（Rust）— 独立 HTTP 租户，脚手架 / 配置 / 市场 / 部署类运维命令
+> - `sdk/tui`（Rust）— 独立 HTTP 租户，可视化多面板交互终端界面
+> 通信通道：`sdk/cli` / `sdk/tui` 经 Gateway HTTP（JSON-RPC 2.0，默认
+> `http://localhost:8080`）与运行时通信；`airy_cli` 不依赖 HTTP，直连内核。
+> 运行时互切：`sdk/tui` 内 F8 切换 exec `airy_cli`；`airy_cli` 内 `/tui`
+> 命令 exec `agentrt-tui`（两二进制同装于 `$AIRY_HOME/bin`）。三者版本号
+> 统一跟随 0.1.5。
+
 ## Quick Start
 
-All examples assume a running AgentRT instance at `http://localhost:18789`.
+All examples assume a running AgentRT instance at `http://localhost:8080`.
 
 ### Python
 
 ```python
 from agentrt import AgentRT
 
-client = AgentRT(endpoint="http://localhost:18789")
+client = AgentRT(endpoint="http://localhost:8080")
 
 # Task: submit a task
 task = client.submit_task("analyze quarterly metrics")
@@ -184,7 +196,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    c, err := client.NewClient(agentrt.WithEndpoint("http://localhost:18789"))
+    c, err := client.NewClient(agentrt.WithEndpoint("http://localhost:8080"))
     if err != nil {
         panic(err)
     }
@@ -208,7 +220,7 @@ use agentrt_rs::modules::task::TaskManager;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new("http://localhost:18789")?;
+    let client = Client::new("http://localhost:8080")?;
     let tasks = TaskManager::new(Arc::new(client));
 
     let task = tasks.submit("analyze quarterly metrics").await?;
@@ -222,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```typescript
 import { AgentRTClient, withEndpoint } from "@agentrt/sdk";
 
-const client = new AgentRTClient(withEndpoint("http://localhost:18789"));
+const client = new AgentRTClient(withEndpoint("http://localhost:8080"));
 
 // Task manager: submit a task
 const task = await client.tasks.submit("analyze quarterly metrics");

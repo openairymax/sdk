@@ -7,7 +7,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.1-5a6b7e)](https://atomgit.com/openairymax/sdk)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![Python](https://img.shields.io/badge/Python->=3.8-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -147,26 +147,37 @@ cargo install --path .
 cargo install --path .
 ```
 
+> **边界约定（SSoT）**：`cli` / `tui` 是面向开发者的独立 Rust 交互工具，与
+> 核心仓内置的 C 工具 `agentrt/tools/airy_cli`（随运行时源码分发）定位互补：
+> - `agentrt/tools/airy_cli`（C）— 运行时自带交互入口，**进程内直接链接
+>   内核库**（GCCP / 认知管线），零外部依赖即用；内置交互 chat 与全屏 TUI
+> - `sdk/cli`（Rust）— 独立 HTTP 租户，脚手架 / 配置 / 市场 / 部署类运维命令
+> - `sdk/tui`（Rust）— 独立 HTTP 租户，可视化多面板交互终端界面
+> 通信通道：`sdk/cli` / `sdk/tui` 经 Gateway HTTP（JSON-RPC 2.0，默认
+> `http://localhost:8080`）与运行时通信；`airy_cli` 不依赖 HTTP，直连内核。
+> 运行时互切：`sdk/tui` 内 F8 切换 exec `airy_cli`；`airy_cli` 内 `/tui`
+> 命令 exec `agentrt-tui`（两二进制同装于 `$AIRY_HOME/bin`）。三者版本号
+> 统一跟随 0.1.5。
+
 ## 快速入门
 
-所有示例假定本地已运行 AgentRT 实例，地址为 `http://localhost:18789`。
+所有示例假定本地已运行 AgentRT 实例，地址为 `http://localhost:8080`。
 
 ### Python
 
 ```python
 from agentrt import AgentRT
 
-client = AgentRT(endpoint="http://localhost:18789")
+client = AgentRT(endpoint="http://localhost:8080")
 
-# 认知层：提交任务
-task = client.cognition.submit_task({"input": "analyze quarterly metrics"})
-print(task.result)
+# Task: submit a task
+task = client.submit_task("analyze quarterly metrics")
 
-# 安全层：在执行工具调用前进行审计
-audit = client.safety.audit(tool="web_search", args={"q": "airymax"})
-if audit.allowed:
-    client.tool.invoke("web_search", {"q": "airymax"})
+# Memory: write a memory record
+memory_id = client.write_memory("quarterly metrics", metadata={"tag": "report"})
 ```
+
+`agentrt.modules` 包还暴露了模块管理器（`TaskManager`、`MemoryManager`、`SessionManager`、`SkillManager`），用于类型化访问。
 
 ### Go
 
@@ -177,35 +188,42 @@ import (
     "context"
     "fmt"
 
-    "github.com/spharx/agentrt-sdk-go/client"
+    "github.com/spharx/agentrt/sdk/go/agentrt"
+    "github.com/spharx/agentrt/sdk/go/agentrt/client"
+    "github.com/spharx/agentrt/sdk/go/agentrt/modules/task"
 )
 
 func main() {
-    c := client.NewAgentRTClient("http://localhost:18789")
-
-    task, err := c.Cognition.SubmitTask(ctx, map[string]any{"input": "analyze quarterly metrics"})
+    ctx := context.Background()
+    c, err := client.NewClient(agentrt.WithEndpoint("http://localhost:8080"))
     if err != nil {
         panic(err)
     }
-    fmt.Println(task.Result)
+
+    tasks := task.NewTaskManager(c)
+    t, err := tasks.Submit(ctx, "analyze quarterly metrics")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("%+v\n", t)
 }
 ```
 
 ### Rust
 
 ```rust
-use agentrt_sdk::prelude::*;
+use std::sync::Arc;
+
+use agentrt_rs::client::Client;
+use agentrt_rs::modules::task::TaskManager;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = AgentRTClient::new("http://localhost:18789");
+    let client = Client::new("http://localhost:8080")?;
+    let tasks = TaskManager::new(Arc::new(client));
 
-    let task = client
-        .cognition()
-        .submit_task(r#"{"input":"analyze quarterly metrics"}"#)
-        .await?;
-
-    println!("{}", task.result);
+    let task = tasks.submit("analyze quarterly metrics").await?;
+    println!("{:?}", task);
     Ok(())
 }
 ```
@@ -213,15 +231,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### TypeScript
 
 ```typescript
-import { AgentRTClient } from "@spharx/agentrt-sdk";
+import { AgentRTClient, withEndpoint } from "@agentrt/sdk";
 
-const client = new AgentRTClient({ endpoint: "http://localhost:18789" });
+const client = new AgentRTClient(withEndpoint("http://localhost:8080"));
 
-// 对话层：流式 LLM 响应
-const stream = await client.chat.stream({ prompt: "Summarize the latest agent run" });
-for await (const chunk of stream) {
-    process.stdout.write(chunk.delta);
-}
+// Task manager: submit a task
+const task = await client.tasks.submit("analyze quarterly metrics");
+console.log(task);
 ```
 
 ## 分支策略
