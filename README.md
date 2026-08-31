@@ -5,7 +5,7 @@
 
 **Language:** English | [简体中文](README_zh.md)
 
-[![Version](https://img.shields.io/badge/version-0.1.7-5a6b7e)](https://atomgit.com/openairymax/sdk)
+[![Version](https://img.shields.io/badge/version-0.1.8-5a6b7e)](https://atomgit.com/openairymax/sdk)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
 [![Python](https://img.shields.io/badge/Python->=3.8-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -157,7 +157,7 @@ cargo install --path .
 > `http://localhost:8080`）与运行时通信；`airy_cli` 不依赖 HTTP，直连内核。
 > 运行时互切：`sdk/tui` 内 F8 切换 exec `airy_cli`；`airy_cli` 内 `/tui`
 > 命令 exec `agentrt-tui`（两二进制同装于 `$AIRY_HOME/bin`）。三者版本号
-> 统一跟随 0.1.5。
+> 统一跟随 0.1.7。
 
 ## Quick Start
 
