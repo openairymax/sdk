@@ -1,11 +1,11 @@
 # Airymax SDK — Multi-Language Developer Toolkit
 
 > Developer toolkit management repository for the Airymax AI Agent Runtime Platform.
-> One of five management repositories under the [airymaxhub](https://atomgit.com/openairymax/airymaxhub) umbrella.
+> A management repo under the user-space engineering super-repo `agent-workload` in the [airymaxhub](https://atomgit.com/openairymax/airymaxhub) umbrella.
 
 **Language:** English | [简体中文](README_zh.md)
 
-[![Version](https://img.shields.io/badge/version-0.1.8-5a6b7e)](https://atomgit.com/openairymax/sdk)
+[![Version](https://img.shields.io/badge/version-0.1.9-5a6b7e)](https://atomgit.com/openairymax/sdk)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
 [![Python](https://img.shields.io/badge/Python->=3.8-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -147,17 +147,12 @@ cargo install --path .
 cargo install --path .
 ```
 
-> **边界约定（SSoT）**：`cli` / `tui` 是面向开发者的独立 Rust 交互工具，与
-> 核心仓内置的 C 工具 `agentrt/tools/airy_cli`（随运行时源码分发）定位互补：
-> - `agentrt/tools/airy_cli`（C）— 运行时自带交互入口，**进程内直接链接
->   内核库**（GCCP / 认知管线），零外部依赖即用；内置交互 chat 与全屏 TUI
-> - `sdk/cli`（Rust）— 独立 HTTP 租户，脚手架 / 配置 / 市场 / 部署类运维命令
-> - `sdk/tui`（Rust）— 独立 HTTP 租户，可视化多面板交互终端界面
-> 通信通道：`sdk/cli` / `sdk/tui` 经 Gateway HTTP（JSON-RPC 2.0，默认
-> `http://localhost:8080`）与运行时通信；`airy_cli` 不依赖 HTTP，直连内核。
-> 运行时互切：`sdk/tui` 内 F8 切换 exec `airy_cli`；`airy_cli` 内 `/tui`
-> 命令 exec `agentrt-tui`（两二进制同装于 `$AIRY_HOME/bin`）。三者版本号
-> 统一跟随 0.1.7。
+> **Tool boundary**: three terminal entry points play complementary roles —
+> - `agentrt/tools/airy_cli` (C, ships with the runtime source) — the runtime's built-in interactive entry point
+> - `sdk/cli` (Rust) — developer-oriented ops CLI (scaffolding / config / market / deploy)
+> - `sdk/tui` (Rust) — developer-oriented multi-panel interactive terminal UI
+> All three talk to the runtime through the gateway (JSON-RPC 2.0, default
+> `http://localhost:8080`); versions follow the release together (current 0.1.9).
 
 ## Quick Start
 
@@ -243,15 +238,15 @@ console.log(task);
 
 ## Branch Strategy
 
-- **This management repo** — `main` only. No feature branches are created here.
-- **Leaf repositories** — active development happens on `feature/official-hubs-01`. The `main` branch on each leaf repo tracks the last stable release.
+- **This management repo (sdk)** — development happens directly on `main`.
+- **Leaf repositories** — active development happens on `develop/hubs-01`; each leaf's `main` is a release snapshot (synced once per release, not for day-to-day work).
 
-When cloning this repo with submodules:
+Aggregation uses gitlinks (commit-hash pins). To clone this repo with submodules:
 
 ```bash
 git clone --recurse-submodules git@atomgit.com:openairymax/sdk.git
 cd sdk
-git submodule update --remote --checkout
+git submodule update --init --recursive
 ```
 
 ## License
