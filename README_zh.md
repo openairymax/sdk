@@ -1,11 +1,11 @@
 # Airymax SDK — 多语言开发者工具包
 
 > Airymax AI 智能体运行时平台的开发者工具包管理仓。
-> [airymaxhub](https://atomgit.com/openairymax/airymaxhub) 伞仓下五个管理仓之一。
+> [airymaxhub](https://atomgit.com/openairymax/airymaxhub) 伞仓下用户态工程 `agent-workload` 内的管理仓。
 
 **语言:** [English](README.md) | 简体中文
 
-[![Version](https://img.shields.io/badge/version-0.1.8-5a6b7e)](https://atomgit.com/openairymax/sdk)
+[![Version](https://img.shields.io/badge/version-0.1.9-5a6b7e)](https://atomgit.com/openairymax/sdk)
 [![License](https://img.shields.io/badge/license-AGPL--3.0+Apache--2.0-4a90d9)](LICENSE)
 [![Python](https://img.shields.io/badge/Python->=3.8-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -147,17 +147,12 @@ cargo install --path .
 cargo install --path .
 ```
 
-> **边界约定（SSoT）**：`cli` / `tui` 是面向开发者的独立 Rust 交互工具，与
-> 核心仓内置的 C 工具 `agentrt/tools/airy_cli`（随运行时源码分发）定位互补：
-> - `agentrt/tools/airy_cli`（C）— 运行时自带交互入口，**进程内直接链接
->   内核库**（GCCP / 认知管线），零外部依赖即用；内置交互 chat 与全屏 TUI
-> - `sdk/cli`（Rust）— 独立 HTTP 租户，脚手架 / 配置 / 市场 / 部署类运维命令
-> - `sdk/tui`（Rust）— 独立 HTTP 租户，可视化多面板交互终端界面
-> 通信通道：`sdk/cli` / `sdk/tui` 经 Gateway HTTP（JSON-RPC 2.0，默认
-> `http://localhost:8080`）与运行时通信；`airy_cli` 不依赖 HTTP，直连内核。
-> 运行时互切：`sdk/tui` 内 F8 切换 exec `airy_cli`；`airy_cli` 内 `/tui`
-> 命令 exec `agentrt-tui`（两二进制同装于 `$AIRY_HOME/bin`）。三者版本号
-> 统一跟随 0.1.8。
+> **工具边界**：三个终端入口互补定位——
+> - `agentrt/tools/airy_cli`（C，随运行时源码分发）— 运行时自带交互入口
+> - `sdk/cli`（Rust）— 开发者运维命令行工具（脚手架 / 配置 / 市场 / 部署）
+> - `sdk/tui`（Rust）— 开发者多面板可视化交互终端界面
+> 三者统一经 gateway（JSON-RPC 2.0，默认 `http://localhost:8080`）与运行时
+> 通信；版本号随发布统一（当前 0.1.9）。
 
 ## 快速入门
 
@@ -242,15 +237,15 @@ console.log(task);
 
 ## 分支策略
 
-- **本管理仓** — 仅 `main` 分支，不在此创建功能分支。
-- **叶子仓** — 活跃开发在 `feature/official-hubs-01` 分支进行；各叶子仓的 `main` 分支跟踪上一个稳定版本。
+- **本管理仓（sdk）**：`main` 直接开发。
+- **叶子仓**：`develop/hubs-01` 为活跃开发分支；`main` 为发布快照（每次 release 同步一次，日常不更新）。
 
-带 submodule 克隆本仓库：
+聚合采用 gitlink（commit hash 钉死）。带 submodule 克隆本仓库：
 
 ```bash
 git clone --recurse-submodules git@atomgit.com:openairymax/sdk.git
 cd sdk
-git submodule update --remote --checkout
+git submodule update --init --recursive
 ```
 
 ## 许可证
