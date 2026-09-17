@@ -1,7 +1,7 @@
 # Airymax SDK — Multi-Language Developer Toolkit
 
-> Developer toolkit for the Airymax AI Agent Runtime (AgentRT) — command-line and
-> terminal-UI tools, plus Python, Go, Rust and TypeScript bindings.
+> Developer toolkit for the Airymax AI Agent Runtime (AgentRT) — console command
+> surface and terminal-UI components, plus Python, Go, Rust and TypeScript bindings.
 > Part of the [openairymax](https://atomgit.com/openairymax) organization on AtomGit.
 
 **Language:** English | [简体中文](README_zh.md)
@@ -20,7 +20,7 @@
 The **`sdk` repository** is the developer-facing packaging layer of the Airymax platform. It aggregates **6 leaf repositories** as git submodules and exposes a single, coherent developer surface for the AgentRT runtime:
 
 - **4 language SDKs** — Python, Go, Rust, TypeScript
-- **2 interactive tools** — `cli` (command-line interface) and `tui` (terminal UI)
+- **2 interactive components** — `console` (console command surface library) and `tui` (terminal UI)
 
 All four language SDKs share the same architecture: an HTTP client layer (`Client` / `APIClient`) topped by four business module managers — `TaskManager` (tasks), `MemoryManager` (memory), `SessionManager` (sessions) and `SkillManager` (skills). Agent applications built on these SDKs are **runtime tenants** — they invoke platform capabilities through the SDK over HTTP / JSON-RPC 2.0 rather than touching kernel internals directly.
 
@@ -34,8 +34,8 @@ sdk/                       # This repository
 ├── sdk-go/                # Go SDK leaf repo (submodule)
 ├── sdk-rust/              # Rust SDK leaf repo (submodule)
 ├── sdk-typescript/        # TypeScript SDK leaf repo (submodule)
-├── cli/                   # cli leaf repo (submodule, directory name: cli/)
-├── tui/                   # tui leaf repo (submodule, directory name: tui/)
+├── console/               # console leaf repo (submodule)
+├── tui/                   # tui leaf repo (submodule)
 ├── .gitmodules            # Submodule definitions
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 dual license full text
 ├── NOTICE                 # Copyright, trademark and third-party notices
@@ -51,10 +51,10 @@ sdk/                       # This repository
 | **sdk-go** | `sdk-go/` | [openairymax/sdk-go](https://atomgit.com/openairymax/sdk-go) | Go | Go SDK (module `github.com/spharx/agentrt/sdk/go/agentrt`, Go 1.22+) |
 | **sdk-rust** | `sdk-rust/` | [openairymax/sdk-rust](https://atomgit.com/openairymax/sdk-rust) | Rust | Rust SDK (crate `agentrt-rs`, edition 2021) |
 | **sdk-typescript** | `sdk-typescript/` | [openairymax/sdk-typescript](https://atomgit.com/openairymax/sdk-typescript) | TypeScript | TypeScript SDK (npm package `@agentrt/sdk`, TypeScript 5.0+) |
-| **cli** | `cli/` | [openairymax/cli](https://atomgit.com/openairymax/cli) | Rust | Command-line interface tool for runtime operations |
+| **console** | `console/` | [openairymax/console](https://atomgit.com/openairymax/console) | Rust | Console command surface library (crate `agentrt-console`) |
 | **tui** | `tui/` | [openairymax/tui](https://atomgit.com/openairymax/tui) | Rust | Terminal UI tool for interactive agent sessions |
 
-> Note: the `cli` and `tui` modules use the same name for both the directory and the repository — no `sdk-` prefix is applied to these two interactive tools.
+> Note: the `console` and `tui` modules use the same name for both the directory and the repository — no `sdk-` prefix is applied to these two interactive components.
 
 ## SDK Architecture
 
@@ -85,7 +85,7 @@ Each language SDK is a plain HTTP client for the AgentRT runtime — there is no
 ### Downstream Consumers
 
 - **Agent applications** — user-written agents that import a language SDK.
-- **`cli` / `tui`** — standalone Rust tools that talk to the gateway over HTTP (they do not link the language SDKs).
+- **`console` / `tui`** — Rust interactive components. `console` builds on `agentrt-rs` for transport and frame decoding; `tui` talks to the gateway over HTTP.
 
 ## Module Manager API
 
@@ -120,7 +120,7 @@ Then start the gateway, e.g. `airymaxrt start`. By default the gateway listens o
 
 ### Endpoint Configuration
 
-Every SDK resolves its endpoint in the same order: explicit option → `AGENTRT_ENDPOINT` environment variable → built-in default `http://127.0.0.1:18789`. The `cli` tool uses `--gateway-url` / `AGENTRT_GATEWAY_URL` (default `http://localhost:8080`); the `tui` additionally reads `$AIRY_HOME/run/gateway.port`.
+Every SDK resolves its endpoint in the same order: explicit option → `AGENTRT_ENDPOINT` environment variable → built-in default `http://127.0.0.1:18789`. The `tui` tool reads `$AIRY_HOME/run/gateway.port` in addition.
 
 > The examples below pass the endpoint explicitly (`http://127.0.0.1:8080`) so they work against a default runtime install. If your gateway runs elsewhere, adjust the value or set `AGENTRT_ENDPOINT`.
 
@@ -151,25 +151,32 @@ npm install @agentrt/sdk
 # or: pnpm add @agentrt/sdk / yarn add @agentrt/sdk
 ```
 
-### CLI & TUI (cli / tui)
+### Console & TUI (console / tui)
 
-Both tools are Rust binaries. Build them from source:
+`console` is a Rust **library crate** (`agentrt-console`) — it defines no binary
+of its own. It carries the console command surface (`commands/`) and the gateway
+protocol client (`client.rs`), both built on the `agentrt-rs` transport. Consume it
+as a path dependency:
+
+```toml
+[dependencies]
+agentrt-console = { path = "sdk/console" }
+```
+
+`tui` is a Rust binary. Build it from source:
 
 ```bash
-# Inside the cli/ directory
-cargo install --path .
-
 # Inside the tui/ directory
 cargo install --path .
 ```
 
-> **Tool boundary**: three terminal entry points play complementary roles —
+> **Tool boundary**: two terminal entry points play complementary roles —
 > - `agentrt/tools/airy_cli` (C, ships with the runtime source) — the runtime's built-in interactive entry point
-> - `sdk/cli` (Rust) — developer-oriented ops CLI (scaffolding / config / market / deploy)
-> - `sdk/tui` (Rust) — developer-oriented multi-panel interactive terminal UI
-> All three talk to the runtime through the gateway (JSON-RPC 2.0, default
+> - `sdk/console` (Rust, library) — the console command surface and gateway protocol client
+> - `sdk/tui` (Rust, binary) — developer-oriented multi-panel interactive terminal UI
+> All of them talk to the runtime through the gateway (JSON-RPC 2.0, default
 > `http://127.0.0.1:8080`). The `tui` crate version follows the runtime release
-> (0.1.15); the `cli` crate versions independently (0.1.8).
+> (0.1.16); the `console` crate version is maintained independently (0.1.16).
 
 ## Quick Start
 

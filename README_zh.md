@@ -1,6 +1,6 @@
 # Airymax SDK — 多语言开发者工具包
 
-> Airymax AI 智能体运行时（AgentRT）的开发者工具包 —— 命令行与终端 UI 工具，以及 Python、Go、Rust、TypeScript 语言绑定。
+> Airymax AI 智能体运行时（AgentRT）的开发者工具包 —— 控制台命令面与终端 UI 组件，以及 Python、Go、Rust、TypeScript 语言绑定。
 > 隶属 AtomGit 上的 [openairymax](https://atomgit.com/openairymax) 组织。
 
 **语言：** [English](README.md) | 简体中文
@@ -19,7 +19,7 @@
 **`sdk` 仓库**是 Airymax 平台面向开发者的打包层。它以 git submodule 形式聚合 **6 个叶子仓**，为 AgentRT 运行时提供统一一致的开发者接口：
 
 - **4 语言 SDK** — Python、Go、Rust、TypeScript
-- **2 个交互式工具** — `cli`（命令行工具）和 `tui`（终端 UI 工具）
+- **2 个交互式组件** — `console`（控制台命令面库）和 `tui`（终端 UI）
 
 四个语言 SDK 采用同一套架构：HTTP 客户端层（`Client` / `APIClient`），其上封装四个业务模块管理器 —— `TaskManager`（任务）、`MemoryManager`（记忆）、`SessionManager`（会话）与 `SkillManager`（技能）。基于这些 SDK 构建的智能体应用是**运行时租户** —— 通过 HTTP / JSON-RPC 2.0 经 SDK 调用平台能力，而非直接接触内核内部。
 
@@ -33,8 +33,8 @@ sdk/                       # 本仓库
 ├── sdk-go/                # Go SDK 叶子仓（submodule）
 ├── sdk-rust/              # Rust SDK 叶子仓（submodule）
 ├── sdk-typescript/        # TypeScript SDK 叶子仓（submodule）
-├── cli/                   # cli 叶子仓（submodule，目录名：cli/）
-├── tui/                   # tui 叶子仓（submodule，目录名：tui/）
+├── console/               # console 叶子仓（submodule）
+├── tui/                   # tui 叶子仓（submodule）
 ├── .gitmodules            # submodule 定义
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 双许可证全文
 ├── NOTICE                 # 版权、商标与第三方声明
@@ -50,10 +50,10 @@ sdk/                       # 本仓库
 | **sdk-go** | `sdk-go/` | [openairymax/sdk-go](https://atomgit.com/openairymax/sdk-go) | Go | Go SDK（模块 `github.com/spharx/agentrt/sdk/go/agentrt`，Go 1.22+） |
 | **sdk-rust** | `sdk-rust/` | [openairymax/sdk-rust](https://atomgit.com/openairymax/sdk-rust) | Rust | Rust SDK（crate `agentrt-rs`，edition 2021） |
 | **sdk-typescript** | `sdk-typescript/` | [openairymax/sdk-typescript](https://atomgit.com/openairymax/sdk-typescript) | TypeScript | TypeScript SDK（npm 包 `@agentrt/sdk`，TypeScript 5.0+） |
-| **cli** | `cli/` | [openairymax/cli](https://atomgit.com/openairymax/cli) | Rust | 命令行工具，用于运行时运维 |
+| **console** | `console/` | [openairymax/console](https://atomgit.com/openairymax/console) | Rust | 控制台命令面库（crate `agentrt-console`） |
 | **tui** | `tui/` | [openairymax/tui](https://atomgit.com/openairymax/tui) | Rust | 终端 UI 工具，用于交互式智能体会话 |
 
-> 注意：`cli` 与 `tui` 模块的目录名与仓库名一致 —— 这两个交互式工具不使用 `sdk-` 前缀。
+> 注意：`console` 与 `tui` 模块的目录名与仓库名一致 —— 这两个交互式组件不使用 `sdk-` 前缀。
 
 ## SDK 架构
 
@@ -84,7 +84,7 @@ sdk/                       # 本仓库
 ### 下游消费者
 
 - **智能体应用** — 用户编写的智能体导入语言 SDK。
-- **`cli` / `tui`** — 独立 Rust 工具，经 HTTP 与 Gateway 通信（不链接语言 SDK）。
+- **`console` / `tui`** — Rust 交互式组件。`console` 基于 `agentrt-rs` 完成传输与帧解码；`tui` 经 HTTP 与 Gateway 通信。
 
 ## 模块管理器 API
 
@@ -119,7 +119,7 @@ curl -fsSL "https://api.atomgit.com/api/v5/repos/openairymax/agentrt/contents/sc
 
 ### 端点配置
 
-每个 SDK 的端点解析顺序一致：显式选项 → `AGENTRT_ENDPOINT` 环境变量 → 内置默认值 `http://127.0.0.1:18789`。`cli` 工具使用 `--gateway-url` / `AGENTRT_GATEWAY_URL`（默认 `http://localhost:8080`）；`tui` 还会读取 `$AIRY_HOME/run/gateway.port`。
+每个 SDK 的端点解析顺序一致：显式选项 → `AGENTRT_ENDPOINT` 环境变量 → 内置默认值 `http://127.0.0.1:18789`。`tui` 工具还会读取 `$AIRY_HOME/run/gateway.port`。
 
 > 下文示例均显式传入端点（`http://127.0.0.1:8080`），可直接对接默认安装的运行时。若你的网关在其他地址，请相应调整取值或设置 `AGENTRT_ENDPOINT`。
 
@@ -150,24 +150,30 @@ npm install @agentrt/sdk
 # 或: pnpm add @agentrt/sdk / yarn add @agentrt/sdk
 ```
 
-### CLI 与 TUI（cli / tui）
+### 控制台与 TUI（console / tui）
 
-两个工具都是 Rust 二进制，从源码构建：
+`console` 是 Rust **库 crate**（`agentrt-console`），自身不定义任何二进制。
+它承载控制台命令面（`commands/`）与 gateway 协议客户端（`client.rs`），两者均
+构建于 `agentrt-rs` 传输层之上。以路径依赖方式消费：
+
+```toml
+[dependencies]
+agentrt-console = { path = "sdk/console" }
+```
+
+`tui` 是 Rust 二进制，从源码构建：
 
 ```bash
-# 在 cli/ 目录内
-cargo install --path .
-
 # 在 tui/ 目录内
 cargo install --path .
 ```
 
-> **工具边界**：三个终端入口互补定位——
+> **工具边界**：两个终端入口互补定位——
 > - `agentrt/tools/airy_cli`（C，随运行时源码分发）— 运行时自带交互入口
-> - `sdk/cli`（Rust）— 开发者运维命令行工具（脚手架 / 配置 / 市场 / 部署）
-> - `sdk/tui`（Rust）— 开发者多面板可视化交互终端界面
-> 三者统一经 gateway（JSON-RPC 2.0，默认 `http://127.0.0.1:8080`）与运行时
-> 通信。`tui` crate 版本随运行时发布（0.1.15）；`cli` crate 独立版本化（0.1.8）。
+> - `sdk/console`（Rust，库）— 控制台命令面与 gateway 协议客户端
+> - `sdk/tui`（Rust，二进制）— 开发者多面板可视化交互终端界面
+> 它们统一经 gateway（JSON-RPC 2.0，默认 `http://127.0.0.1:8080`）与运行时
+> 通信。`tui` crate 版本随运行时发布（0.1.16）；`console` crate 独立版本化（0.1.16）。
 
 ## 快速入门
 
