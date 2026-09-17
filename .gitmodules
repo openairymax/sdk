@@ -14,9 +14,9 @@
 	path = sdk-typescript
 	url = ../sdk-typescript.git
 	branch = develop/hubs-01
-[submodule "cli"]
-	path = cli
-	url = ../cli.git
+[submodule "console"]
+	path = console
+	url = ../console.git
 	branch = develop/hubs-01
 [submodule "tui"]
 	path = tui
