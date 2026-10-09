@@ -2,9 +2,9 @@
 
 **最后更新**: 2026-08-04
 
-本仓库（`sdk`）是 SDK 管理仓，聚合 6 个叶子仓库：`sdk-python`、`sdk-go`、
-`sdk-rust`、`sdk-typescript`、`cli`、`tui`。实际代码开发在叶子仓库中进行；
-本仓只承载文档、submodule 配置与许可。
+本仓库（`sdk`）是 SDK 管理仓，聚合 8 个叶子仓库：`sdk-python`、`sdk-go`、
+`sdk-rust`、`sdk-typescript`、`console`、`tui`、`desktop`、`docker`。实际代码
+开发在叶子仓库中进行；本仓只承载文档、submodule 配置与许可。
 
 ## 1. 提交前检查
 
@@ -16,8 +16,10 @@
 | sdk-go | `go test ./...`（在 `sdk-go/` 模块根目录） |
 | sdk-rust | `cargo test` |
 | sdk-typescript | `npm ci && npm test` |
-| cli | `cargo test` |
+| console | `cargo test` |
 | tui | `cargo test` |
+| desktop | `npm ci && npm run test:run` |
+| docker | Dockerfile 存在性校验（`ls Dockerfile*` + compose 文件） |
 
 CI（各仓库 `.github/workflows/ci.yml`）会真实运行上述测试，失败即任务失败。
 

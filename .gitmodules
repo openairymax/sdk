@@ -22,3 +22,11 @@
 	path = tui
 	url = ../tui.git
 	branch = dev/hubs-01
+[submodule "desktop"]
+	path = desktop
+	url = ../desktop.git
+	branch = dev/hubs-01
+[submodule "docker"]
+	path = docker
+	url = ../docker.git
+	branch = dev/hubs-01
