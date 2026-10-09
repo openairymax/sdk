@@ -17,10 +17,11 @@
 
 ## Overview
 
-The **`sdk` repository** is the developer-facing packaging layer of the Airymax platform. It aggregates **6 leaf repositories** as git submodules and exposes a single, coherent developer surface for the AgentRT runtime:
+The **`sdk` repository** is the developer-facing packaging layer of the Airymax platform. It aggregates **8 leaf repositories** as git submodules and exposes a single, coherent developer surface for the AgentRT runtime:
 
 - **4 language SDKs** — Python, Go, Rust, TypeScript
 - **2 interactive components** — `console` (console command surface library) and `tui` (terminal UI)
+- **2 client applications** — `desktop` (Tauri desktop client) and `docker` (container deployment)
 
 All four language SDKs share the same architecture: an HTTP client layer (`Client` / `APIClient`) topped by four business module managers — `TaskManager` (tasks), `MemoryManager` (memory), `SessionManager` (sessions) and `SkillManager` (skills). Agent applications built on these SDKs are **runtime tenants** — they invoke platform capabilities through the SDK over HTTP / JSON-RPC 2.0 rather than touching kernel internals directly.
 
@@ -36,6 +37,8 @@ sdk/                       # This repository
 ├── sdk-typescript/        # TypeScript SDK leaf repo (submodule)
 ├── console/               # console leaf repo (submodule)
 ├── tui/                   # tui leaf repo (submodule)
+├── desktop/               # desktop client leaf repo (submodule)
+├── docker/                # container deployment leaf repo (submodule)
 ├── .gitmodules            # Submodule definitions
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 dual license full text
 ├── NOTICE                 # Copyright, trademark and third-party notices
@@ -53,6 +56,8 @@ sdk/                       # This repository
 | **sdk-typescript** | `sdk-typescript/` | [openairymax/sdk-typescript](https://atomgit.com/openairymax/sdk-typescript) | TypeScript | TypeScript SDK (npm package `@agentrt/sdk`, TypeScript 5.0+) |
 | **console** | `console/` | [openairymax/console](https://atomgit.com/openairymax/console) | Rust | Console command surface library (crate `agentrt-console`) |
 | **tui** | `tui/` | [openairymax/tui](https://atomgit.com/openairymax/tui) | Rust | Terminal UI tool for interactive agent sessions |
+| **desktop** | `desktop/` | [openairymax/desktop](https://atomgit.com/openairymax/desktop) | Rust + TypeScript | Tauri v2 desktop client (React 18 front end) |
+| **docker** | `docker/` | [openairymax/docker](https://atomgit.com/openairymax/docker) | Shell / Dockerfile | Container deployment assets (kernel / daemon / openlab / desktop images) |
 
 > Note: the `console` and `tui` modules use the same name for both the directory and the repository — no `sdk-` prefix is applied to these two interactive components.
 
@@ -86,6 +91,7 @@ Each language SDK is a plain HTTP client for the AgentRT runtime — there is no
 
 - **Agent applications** — user-written agents that import a language SDK.
 - **`console` / `tui`** — Rust interactive components. `console` builds on `agentrt-rs` for transport and frame decoding; `tui` talks to the gateway over HTTP.
+- **`desktop` / `docker`** — client applications packaged for end users. `desktop` is a Tauri v2 desktop client; `docker` provides container images for deploying the runtime and clients.
 
 ## Module Manager API
 

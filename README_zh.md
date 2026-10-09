@@ -16,10 +16,11 @@
 
 ## 概述
 
-**`sdk` 仓库**是 Airymax 平台面向开发者的打包层。它以 git submodule 形式聚合 **6 个叶子仓**，为 AgentRT 运行时提供统一一致的开发者接口：
+**`sdk` 仓库**是 Airymax 平台面向开发者的打包层。它以 git submodule 形式聚合 **8 个叶子仓**，为 AgentRT 运行时提供统一一致的开发者接口：
 
 - **4 语言 SDK** — Python、Go、Rust、TypeScript
 - **2 个交互式组件** — `console`（控制台命令面库）和 `tui`（终端 UI）
+- **2 个客户端应用** — `desktop`（Tauri 桌面客户端）和 `docker`（容器化部署）
 
 四个语言 SDK 采用同一套架构：HTTP 客户端层（`Client` / `APIClient`），其上封装四个业务模块管理器 —— `TaskManager`（任务）、`MemoryManager`（记忆）、`SessionManager`（会话）与 `SkillManager`（技能）。基于这些 SDK 构建的智能体应用是**运行时租户** —— 通过 HTTP / JSON-RPC 2.0 经 SDK 调用平台能力，而非直接接触内核内部。
 
@@ -35,6 +36,8 @@ sdk/                       # 本仓库
 ├── sdk-typescript/        # TypeScript SDK 叶子仓（submodule）
 ├── console/               # console 叶子仓（submodule）
 ├── tui/                   # tui 叶子仓（submodule）
+├── desktop/               # desktop 客户端叶子仓（submodule）
+├── docker/                # 容器化部署叶子仓（submodule）
 ├── .gitmodules            # submodule 定义
 ├── LICENSE                # AGPL-3.0 + Apache-2.0 双许可证全文
 ├── NOTICE                 # 版权、商标与第三方声明
@@ -52,6 +55,8 @@ sdk/                       # 本仓库
 | **sdk-typescript** | `sdk-typescript/` | [openairymax/sdk-typescript](https://atomgit.com/openairymax/sdk-typescript) | TypeScript | TypeScript SDK（npm 包 `@agentrt/sdk`，TypeScript 5.0+） |
 | **console** | `console/` | [openairymax/console](https://atomgit.com/openairymax/console) | Rust | 控制台命令面库（crate `agentrt-console`） |
 | **tui** | `tui/` | [openairymax/tui](https://atomgit.com/openairymax/tui) | Rust | 终端 UI 工具，用于交互式智能体会话 |
+| **desktop** | `desktop/` | [openairymax/desktop](https://atomgit.com/openairymax/desktop) | Rust + TypeScript | Tauri v2 桌面客户端（React 18 前端） |
+| **docker** | `docker/` | [openairymax/docker](https://atomgit.com/openairymax/docker) | Shell / Dockerfile | 容器化部署资产（kernel / daemon / openlab / desktop 镜像） |
 
 > 注意：`console` 与 `tui` 模块的目录名与仓库名一致 —— 这两个交互式组件不使用 `sdk-` 前缀。
 
@@ -85,6 +90,7 @@ sdk/                       # 本仓库
 
 - **智能体应用** — 用户编写的智能体导入语言 SDK。
 - **`console` / `tui`** — Rust 交互式组件。`console` 基于 `agentrt-rs` 完成传输与帧解码；`tui` 经 HTTP 与 Gateway 通信。
+- **`desktop` / `docker`** — 面向终端用户打包的客户端应用。`desktop` 是 Tauri v2 桌面客户端；`docker` 提供用于部署运行时与客户端的容器镜像。
 
 ## 模块管理器 API
 

@@ -2,8 +2,8 @@
 
 **最后更新**: 2026-08-04
 
-多语言 SDK（Python / Go / Rust / TypeScript）与交互工具（cli / tui）是开发者
-访问 AgentRT 运行时的主要入口，安全漏洞可能影响所有下游应用。
+多语言 SDK（Python / Go / Rust / TypeScript）与交互客户端（console / tui /
+desktop）是开发者访问 AgentRT 运行时的主要入口，安全漏洞可能影响所有下游应用。
 
 ## 漏洞报告
 
