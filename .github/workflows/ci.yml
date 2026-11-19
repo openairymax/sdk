@@ -46,6 +46,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Checkout agentrt for schema headers
+        uses: actions/checkout@v4
+        with:
+          repository: openairymax/agentrt
+          ref: main
+          path: agentrt-checkout
       - name: Cargo check (all targets, locked)
         run: cargo check --all-targets --locked
         working-directory: tui
+        env:
+          # sdk-rust/build.rs 从 C 侧 schema 生成常量（SSoT 在 agentrt 仓），
+          # 独立仓 CI 无 monorepo 同级布局，按 build.rs 约定显式注入头文件路径。
+          AGENTRT_RS_RUN_STREAM_H: ${{ github.workspace }}/agentrt-checkout/commons/include/airy_run_stream.h
