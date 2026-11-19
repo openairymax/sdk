@@ -52,7 +52,10 @@ jobs:
           repository: openairymax/agentrt
           ref: main
           path: agentrt-checkout
-          submodules: recursive
+      - name: Init commons submodule
+        # 只拉 commons：agentrt 的部分子模块（如 atoms）尚未镜像到 GitHub，
+        # recursive 拉取会整体失败；schema 头文件是 build.rs 唯一需要的外部面。
+        run: git -C agentrt-checkout submodule update --init --depth 1 commons
       - name: Cargo check (all targets, locked)
         run: cargo check --all-targets --locked
         working-directory: tui
