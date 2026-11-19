@@ -1,0 +1,51 @@
+name: CI
+
+# SDK 仓（八子模块的装配管理仓）。流水线体系 L1 仓内快速门禁：
+# 每语言一条腿、1 失败域 = 1 作业、总数 ≤3（agentrt release.yml 同体系分层）：
+#   sdk-python —— 343 用例全量 pytest（tests 自带 sys.path，无需安装包）。
+#   tui        —— cargo check --all-targets --locked 编译面门禁
+#                 （--locked 锁定 Cargo.lock 一致性；交互式集成测试
+#                 需要 PTY，不在无头 CI 展开）。
+# console/desktop/docker/sdk-go/sdk-rust/sdk-typescript 为纯载荷或
+# 外部语言腿，暂无独立测试面，不设空作业。
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sdk-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run sdk-python suite
+        run: |
+          pip install requests aiohttp pytest pytest-asyncio --quiet
+          (cd sdk-python && python3 -m pytest -q 2>&1 | tail -15)
+
+  tui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Cargo check (all targets, locked)
+        run: cargo check --all-targets --locked
+        working-directory: tui
