@@ -52,6 +52,7 @@ jobs:
           repository: openairymax/agentrt
           ref: main
           path: agentrt-checkout
+          submodules: recursive
       - name: Cargo check (all targets, locked)
         run: cargo check --all-targets --locked
         working-directory: tui
